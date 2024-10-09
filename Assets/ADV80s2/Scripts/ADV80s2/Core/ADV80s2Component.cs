@@ -3,18 +3,17 @@ using UnityEngine;
 namespace Assets.ADV80s2.Scripts.ADV80s2.Core {
     public class ADV80s2Component : MonoBehaviour, Interfaces.IADV80s2Component
     {
-        [SerializeField]
-        private Publisher _publisher;
+        public Publisher publisher;
 
         [SerializeField]
         private GameObject _component;
 
         public void SendMessage(Object.MessageObject message) {
-            if (_publisher == null) {
+            if (publisher == null) {
                 return;
             }
 
-            _publisher.Publish(message);
+            publisher.Publish(message);
         }
 
         public void DoMessage(Object.MessageObject message) {
