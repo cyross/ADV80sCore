@@ -105,17 +105,17 @@ namespace Assets.ADV80s2.Scripts.ADV80s2.Core {
 
             var currentMessage = _messageQueue.Dequeue();
 
+            // 全部の Subscriber へ送信
+            if (currentMessage.IsBroadcast) {
+                _subscribers.ForEach(subscriber => subscriber.Subscribe(currentMessage));
+            }
             // 適切な Subscriber が見つかった
-            if (_subscribersDict.ContainsKey(currentMessage.Type)) {
+            else if (_subscribersDict.ContainsKey(currentMessage.Type)) {
                 // メッセージの形式に相応しいサブスクライバにメッセージを渡す
                 var targetSubscriber = _subscribersDict[currentMessage.Type];
 
                 // サブスクライバへサブスクライブすることでコンポーネントに処理を指示する
                 targetSubscriber.Subscribe(currentMessage);
-            }
-            // 全部の Subscriber へ送信
-            else if (currentMessage.Type == "[broadcast]") {
-                _subscribers.ForEach(subscriber => subscriber.Subscribe(currentMessage));
             }
             // 適切な Subscriber が見つからなかった
             else {
