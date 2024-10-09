@@ -1,10 +1,10 @@
 namespace Assets.ADV80s2.Scripts.ADV80s2.Object {
-    public class MessageObject: BaseObject
+    public class MessageObject: BaseObject<object>
     {
-        public BaseObject Object { get; set; }
+        public BaseObject<object> Object { get; set; }
         public new string Type { get; set; } = "message";
 
-        public MessageObject(string targetType, BaseObject targetObject) {
+        public MessageObject(string targetType, BaseObject<object> targetObject) {
             Type = targetType;
             Object = targetObject;
         }

@@ -1,7 +1,8 @@
-using System.Collections.Generic;
+using System;
 
 namespace Assets.ADV80s2.Scripts.ADV80s2.Object {
-    public class Variable: BaseObject
+    [Serializable]
+    public class Variable: BaseObject<object>
     {
         public new string Type { get; set; } = "variable";
     }

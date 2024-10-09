@@ -1,22 +1,29 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Assets.ADV80s2.Scripts.ADV80s2.Interfaces;
 using UnityEngine;
 using VFolders.Libs;
 
 namespace Assets.ADV80s2.Scripts.ADV80s2.Core {
-    public class Dispatcher : MonoBehaviour
+    public class Dispatcher : MonoBehaviour, IStatusManagement
     {
         [SerializeField]
         private List<Subscriber> _subscribers = new List<Subscriber>();
+
+        [SerializeField]
+        private StatePool.StatePool _state_pool;
 
         private Dictionary<string, Subscriber> _subscribersDict = new Dictionary<string, Subscriber>();
 
         private Queue<Object.MessageObject> _messageQueue = new Queue<Object.MessageObject>();
 
-        private bool _setupCompleted = false;
+        public Enumerators.State State { get; set; } = Enumerators.State.INITIALIZING;
 
-        public bool StandBy { get; set; }
+        public bool IsStandBy ()
+        {
+            return State == Enumerators.State.STANDBY;
+        }
 
         // メッセージキューにメッセージを追加
         public void Enqueue(Object.MessageObject message) {
@@ -58,7 +65,7 @@ namespace Assets.ADV80s2.Scripts.ADV80s2.Core {
         // Update is called once per frame
         void Update()
         {
-            if (!_setupCompleted) {
+            if (State == Enumerators.State.INITIALIZING) {
                 // サブスクライバーが未登録の時はここで登録
                 if (_subscribers.Count == 0) {
                     _subscribers = FindObjectsOfType<Subscriber>().ToList();
@@ -67,7 +74,7 @@ namespace Assets.ADV80s2.Scripts.ADV80s2.Core {
                     Debug.Log($"Found Subscribers: {foundNames}");
                 }
 
-                // すべてのサブスクライバーの Name プロパティに値が設定されタラ準備完了
+                // すべてのサブスクライバーの Name プロパティに値が設定されたら準備完了
                 var isSetAllSubscriberName = _subscribers.All(subscriber => !subscriber.Name.IsEmpty());
 
                 if (!isSetAllSubscriberName) {
@@ -81,12 +88,11 @@ namespace Assets.ADV80s2.Scripts.ADV80s2.Core {
 
                 RefreshSubscribers();
 
-                _setupCompleted = true;
-                StandBy = true;
+                State = Enumerators.State.STANDBY;
             }
 
             // 受け入れ準備ができていないときは何もしない
-            if (!StandBy) {
+            if (!IsStandBy()) {
                 return;
             }
 
@@ -95,23 +101,28 @@ namespace Assets.ADV80s2.Scripts.ADV80s2.Core {
                 return;
             }
 
-            StandBy = false;
+            State = Enumerators.State.PROCESSING;
 
             var currentMessage = _messageQueue.Dequeue();
 
-            if (!_subscribersDict.ContainsKey(currentMessage.Type)) {
-                Debug.LogError($"Unknown Type : ${currentMessage.Type}");
+            // 適切な Subscriber が見つかった
+            if (_subscribersDict.ContainsKey(currentMessage.Type)) {
+                // メッセージの形式に相応しいサブスクライバにメッセージを渡す
+                var targetSubscriber = _subscribersDict[currentMessage.Type];
 
-                return;
+                // サブスクライバへサブスクライブすることでコンポーネントに処理を指示する
+                targetSubscriber.Subscribe(currentMessage);
+            }
+            // 全部の Subscriber へ送信
+            else if (currentMessage.Type == "[broadcast]") {
+                _subscribers.ForEach(subscriber => subscriber.Subscribe(currentMessage));
+            }
+            // 適切な Subscriber が見つからなかった
+            else {
+                Debug.LogError($"Unknown Type : ${currentMessage.Type}");
             }
 
-            // メッセージの形式に相応しいサブスクライバにメッセージを渡す
-            var targetSubscriber = _subscribersDict[currentMessage.Type];
-
-            // サブスクライバへサブスクライブすることでコンポーネントに処理を指示する
-            targetSubscriber.Subscribe(currentMessage);
-
-            StandBy = true;
+            State = Enumerators.State.STANDBY;
         }
     }
 }

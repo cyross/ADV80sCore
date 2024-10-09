@@ -1,30 +1,37 @@
+using Assets.ADV80s2.Scripts.ADV80s2.Interfaces;
 using UnityEngine;
-using VFolders.Libs;
+using System.Collections.Generic;
 
 namespace Assets.ADV80s2.Scripts.ADV80s2.Core {
-    public class Subscriber : MonoBehaviour
+    public class Subscriber : MonoBehaviour, IStatusManagement
     {
         public string Name = "";
 
         public ADV80s2Component Component;
 
-        private Object.MessageObject _message = null;
+        private Queue<Object.MessageObject> _messageQueue = new Queue<Object.MessageObject>();
 
-        public bool StandBy { get; set; }
+        public Enumerators.State State { get; set; } = Enumerators.State.STANDBY;
 
-        public void Subscribe(Object.MessageObject message) {
-            _message = message;
+        public bool IsStandBy ()
+        {
+            return State == Enumerators.State.STANDBY;
+        }
+
+        public void Subscribe(Object.MessageObject message)
+        {
+            _messageQueue.Enqueue(message);
         }
 
         // Start is called before the first frame update
         void Start()
         {
             // 名前が未登録の場合は付与されている GameObject の名前を設定
-            if (Name.IsEmpty()) {
+            if (Name == "") {
                 Name = gameObject.name;
             }
 
-            StandBy = true;
+            State = Enumerators.State.STANDBY;
         }
 
         // Update is called once per frame
@@ -32,17 +39,17 @@ namespace Assets.ADV80s2.Scripts.ADV80s2.Core {
         {
             // Component が 紐づけられており、 Component と自分自身の StandBy が true のときのみ
             // Component への引き渡しが可能
-            if (_message == null || Component == null || !Component.StandBy || !StandBy ) {
+            if (Component == null || !Component.IsStandBy() || !IsStandBy()) {
                 return;
             }
 
-            StandBy = false;
+            State = Enumerators.State.PROCESSING;
 
-            Component.DoMessage(_message);
+            var message = _messageQueue.Dequeue();
 
-            _message = null;
+            Component.DoMessage(message);
 
-            StandBy = true;
+            State = Enumerators.State.STANDBY;
         }
     }
 }
