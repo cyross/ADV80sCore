@@ -2,11 +2,8 @@ using UnityEngine;
 using  Assets.ADV80s2.Scripts.ADV80s2.Core;
 using  Assets.ADV80s2.Scripts.ADV80s2.Object;
 
-public class ScenarioProcessor : MonoBehaviour
+public class ScenarioProcessor : ADV80s2Component
 {
-    [SerializeField]
-    private Publisher _publisher;
-
     private Scenario _compiled = null;
 
     private Scenario Compile(string script) {
@@ -20,7 +17,7 @@ public class ScenarioProcessor : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        if (_publisher == null) {
+        if (publisher == null) {
             Debug.LogError("Not attempt ADV80s2Publisher!");
         }
     }
@@ -29,7 +26,7 @@ public class ScenarioProcessor : MonoBehaviour
     void Update()
     {
         // パブリッシャーが登録されていない、スクリプトがロードされていないときは何もしない
-        if (_publisher == null || _compiled == null) {
+        if (publisher == null || _compiled == null) {
             return;
         }
     }
